@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaskBoard — Kanban Todo List</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="kanban.css">
+</head>
+<body>
+
+<nav class="blue darken-3">
+<div class="nav-wrapper container">
+<a href="#!" class="brand-logo">Task<span class="light-blue-text text-lighten-3">Board</span></a>
+<a href="#" data-target="mobile-nav" class="sidenav-trigger"><i class="material-icons">menu</i></a>
+<ul class="right hide-on-med-and-down">
+<li><a href="#panel-todo">To Do</a></li>
+<li><a href="#panel-inProgress">In Progress</a></li>
+<li><a href="#panel-done">Done</a></li>
+<li>
+<a href="#!" class="btn light-blue darken-1" id="openAddModalBtn">
+<i class="material-icons left">add</i>New Ticket
+</a>
+</li>
+</ul>
+</div>
+</nav>
+
+<ul class="sidenav" id="mobile-nav">
+<li><a href="#panel-todo">To Do</a></li>
+<li><a href="#panel-inProgress">In Progress</a></li>
+<li><a href="#panel-done">Done</a></li>
+<li><div class="divider"></div></li>
+<li>
+<a href="#!" class="btn light-blue darken-1 waves-effect waves-light" id="openAddModalBtnMobile" style="margin: 10px 16px;">
+<i class="material-icons left">add</i>New Ticket
+</a>
+</li>
+</ul>
+
+<header class="board-header light-blue lighten-5">
+<div class="container">
+<h4>Kanban Todo List</h4>
+<p class="grey-text text-darken-1">Drag tickets between columns, or use the three-dot menu on any ticket to move, copy, or delete it.</p>
+<div class="row" style="margin-bottom: 0;">
+<div class="input-field col s12 m6">
+<i class="material-icons prefix">search</i>
+<input type="text" id="searchInput" autocomplete="off">
+<label for="searchInput">Search tickets by title</label>
+</div>
+</div>
+</div>
+</header>
+
+<main class="container board-main">
+<div class="row">
+
+<div class="col s12 m4 board-col" id="panel-todo" data-status="todo">
+<div class="board-col-header grey darken-3 white-text">
+<i class="material-icons left">assignment</i>
+<span>To Do</span>
+<span class="new badge blue" data-badge-caption="" id="count-todo">0</span>
+</div>
+<div class="board-dropzone" data-status="todo" id="list-todo"></div>
+</div>
+
+<div class="col s12 m4 board-col" id="panel-inProgress" data-status="inProgress">
+<div class="board-col-header amber darken-3 white-text">
+<i class="material-icons left">autorenew</i>
+<span>In Progress</span>
+<span class="new badge orange" data-badge-caption="" id="count-inProgress">0</span>
+</div>
+<div class="board-dropzone" data-status="inProgress" id="list-inProgress"></div>
+</div>
+
+<div class="col s12 m4 board-col" id="panel-done" data-status="done">
+<div class="board-col-header teal darken-3 white-text">
+<i class="material-icons left">check_circle</i>
+<span>Done</span>
+<span class="new badge green" data-badge-caption="" id="count-done">0</span>
+</div>
+<div class="board-dropzone" data-status="done" id="list-done"></div>
+</div>
+
+</div>
+</main>
+
+<footer class="page-footer blue darken-3">
+<div class="footer-copyright">
+<div class="container white-text">
+TaskBoard — a simple drag &amp; drop Kanban demo. &copy; 2026
+</div>
+</div>
+</footer>
+
+<!-- Add / Edit ticket modal -->
+<div id="ticketModal" class="modal">
+<div class="modal-content">
+<h4>New Ticket</h4>
+<form id="ticketForm">
+<div class="row">
+<div class="input-field col s12">
+<input type="text" id="ticketTitle" required maxlength="80">
+<label for="ticketTitle">Title</label>
+</div>
+<div class="input-field col s12">
+<textarea id="ticketDescription" class="materialize-textarea"></textarea>
+<label for="ticketDescription">Description</label>
+</div>
+<div class="input-field col s12">
+<select id="ticketStatus">
+<option value="todo" selected>To Do</option>
+<option value="inProgress">In Progress</option>
+<option value="done">Done</option>
+</select>
+<label>Column</label>
+</div>
+</div>
+</form>
+</div>
+<div class="modal-footer">
+<a href="#!" class="modal-close waves-effect waves-light btn-flat">Cancel</a>
+<a href="#!" class="waves-effect waves-light btn light-blue darken-1" id="saveTicketBtn">Add Ticket</a>
+</div>
+</div>
+
+<!-- Ticket card template -->
+<template id="ticketCardTemplate">
+<div class="card ticket-card" draggable="true">
+<div class="card-content">
+<div class="ticket-card-top">
+<span class="card-title ticket-title"></span>
+<a href="#!" class="dropdown-trigger ticket-menu-trigger" data-target="">
+<i class="material-icons">more_vert</i>
+</a>
+</div>
+<div class="ticket-description-wrapper">
+<p class="ticket-description"></p>
+<a href="#!" class="ticket-toggle-desc" style="display:none;">Show more</a>
+</div>
+</div>
+<ul class="dropdown-content ticket-dropdown">
+<li class="ticket-menu-move-1"><a href="#!"><i class="material-icons">arrow_forward</i><span></span></a></li>
+<li class="ticket-menu-move-2"><a href="#!"><i class="material-icons">arrow_forward</i><span></span></a></li>
+<li class="divider" tabindex="-1"></li>
+<li class="ticket-menu-copy"><a href="#!"><i class="material-icons">content_copy</i>Copy</a></li>
+<li class="ticket-menu-delete"><a href="#!" class="red-text"><i class="material-icons red-text">delete</i>Delete</a></li>
+</ul>
+</template>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+<script src="kanban.js"></script>
+</body>
+</html>

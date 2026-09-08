@@ -1,0 +1,129 @@
+body {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  background-color: #eceff1;
+}
+
+main.board-main {
+  flex: 1 0 auto;
+  max-width: 1200px;
+}
+
+.board-header {
+  padding: 24px 0 12px 0;
+}
+
+.board-header h4 {
+  margin-top: 0;
+}
+
+/* Columns */
+.board-col {
+  margin-bottom: 24px;
+}
+
+.board-col-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 6px 6px 0 0;
+  font-weight: 600;
+}
+
+.board-col-header .badge {
+  margin-left: auto;
+  min-width: 22px;
+  text-align: center;
+}
+
+.board-dropzone {
+  background-color: #ffffff;
+  border: 2px dashed #cfd8dc;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  min-height: 200px;
+  padding: 10px;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.board-dropzone.drag-over {
+  background-color: #e1f5fe;
+  border-color: #039be5;
+}
+
+.board-dropzone .empty-hint {
+  color: #90a4ae;
+  text-align: center;
+  padding: 30px 10px;
+  font-style: italic;
+}
+
+/* Ticket cards */
+.ticket-card {
+  cursor: grab;
+  margin: 0 0 12px 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.ticket-card.dragging {
+  opacity: 0.4;
+}
+
+.ticket-card .card-content {
+  padding: 14px 16px;
+}
+
+.ticket-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ticket-title {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.ticket-menu-trigger {
+  color: #78909c;
+  flex-shrink: 0;
+}
+
+.ticket-menu-trigger i {
+  font-size: 20px;
+}
+
+.ticket-description-wrapper {
+  margin-top: 6px;
+}
+
+.ticket-description {
+  margin: 0;
+  font-size: 13.5px;
+  color: #546e7a;
+  line-height: 1.45em;
+  overflow: hidden;
+}
+
+.ticket-description.collapsed {
+  max-height: calc(1.45em * 3);
+}
+
+.ticket-toggle-desc {
+  font-size: 12.5px;
+  font-weight: 600;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+/* Small screens: stack columns like previous mobile behaviour */
+@media only screen and (max-width: 600px) {
+  .board-col {
+    margin-bottom: 20px;
+  }
+}
