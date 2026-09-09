@@ -57,7 +57,7 @@
 <main class="container board-main">
 <div class="row">
 
-<div class="col s12 m4 board-col" id="panel-todo" data-status="todo">
+<div class="col s12 l4 board-col" id="panel-todo" data-status="todo">
 <div class="board-col-header grey darken-3 white-text">
 <i class="material-icons left">assignment</i>
 <span>To Do</span>
@@ -66,7 +66,7 @@
 <div class="board-dropzone" data-status="todo" id="list-todo"></div>
 </div>
 
-<div class="col s12 m4 board-col" id="panel-inProgress" data-status="inProgress">
+<div class="col s12 l4 board-col" id="panel-inProgress" data-status="inProgress">
 <div class="board-col-header amber darken-3 white-text">
 <i class="material-icons left">autorenew</i>
 <span>In Progress</span>
@@ -75,7 +75,7 @@
 <div class="board-dropzone" data-status="inProgress" id="list-inProgress"></div>
 </div>
 
-<div class="col s12 m4 board-col" id="panel-done" data-status="done">
+<div class="col s12 l4 board-col" id="panel-done" data-status="done">
 <div class="board-col-header teal darken-3 white-text">
 <i class="material-icons left">check_circle</i>
 <span>Done</span>
@@ -98,7 +98,7 @@ TaskBoard — a simple drag &amp; drop Kanban demo. &copy; 2026
 <!-- Add / Edit ticket modal -->
 <div id="ticketModal" class="modal">
 <div class="modal-content">
-<h4>New Ticket</h4>
+<h4 id="ticketModalHeading">New Ticket</h4>
 <form id="ticketForm">
 <div class="row">
 <div class="input-field col s12">
@@ -111,7 +111,7 @@ TaskBoard — a simple drag &amp; drop Kanban demo. &copy; 2026
 </div>
 <div class="input-field col s12">
 <select id="ticketStatus">
-<option value="todo" selected>To Do</option>
+<option value="todo">To Do</option>
 <option value="inProgress">In Progress</option>
 <option value="done">Done</option>
 </select>
@@ -126,11 +126,42 @@ TaskBoard — a simple drag &amp; drop Kanban demo. &copy; 2026
 </div>
 </div>
 
+<!-- Edit title modal -->
+<div id="editTitleModal" class="modal">
+<div class="modal-content">
+<h4>Edit Title</h4>
+<div class="input-field">
+<input type="text" id="editTitleInput" maxlength="80">
+<label for="editTitleInput" class="active">Title</label>
+</div>
+</div>
+<div class="modal-footer">
+<a href="#!" class="modal-close waves-effect waves-light btn-flat">Cancel</a>
+<a href="#!" class="waves-effect waves-light btn light-blue darken-1" id="saveTitleBtn">Save</a>
+</div>
+</div>
+
+<!-- Edit description modal -->
+<div id="editDescriptionModal" class="modal">
+<div class="modal-content">
+<h4>Edit Description</h4>
+<div class="input-field">
+<textarea id="editDescriptionInput" class="materialize-textarea"></textarea>
+<label for="editDescriptionInput" class="active">Description</label>
+</div>
+</div>
+<div class="modal-footer">
+<a href="#!" class="modal-close waves-effect waves-light btn-flat">Cancel</a>
+<a href="#!" class="waves-effect waves-light btn light-blue darken-1" id="saveDescriptionBtn">Save</a>
+</div>
+</div>
+
 <!-- Ticket card template -->
 <template id="ticketCardTemplate">
 <div class="card ticket-card" draggable="true">
 <div class="card-content">
 <div class="ticket-card-top">
+<i class="material-icons ticket-status-icon"></i>
 <span class="card-title ticket-title"></span>
 <a href="#!" class="dropdown-trigger ticket-menu-trigger" data-target="">
 <i class="material-icons">more_vert</i>
@@ -142,8 +173,11 @@ TaskBoard — a simple drag &amp; drop Kanban demo. &copy; 2026
 </div>
 </div>
 <ul class="dropdown-content ticket-dropdown">
-<li class="ticket-menu-move-1"><a href="#!"><i class="material-icons">arrow_forward</i><span></span></a></li>
-<li class="ticket-menu-move-2"><a href="#!"><i class="material-icons">arrow_forward</i><span></span></a></li>
+<li class="ticket-menu-edit-title"><a href="#!"><i class="material-icons">edit</i>Edit Title</a></li>
+<li class="ticket-menu-edit-description"><a href="#!"><i class="material-icons">notes</i>Edit Description</a></li>
+<li class="divider" tabindex="-1"></li>
+<li class="ticket-menu-move-1"><a href="#!"><i class="material-icons"></i><span></span></a></li>
+<li class="ticket-menu-move-2"><a href="#!"><i class="material-icons"></i><span></span></a></li>
 <li class="divider" tabindex="-1"></li>
 <li class="ticket-menu-copy"><a href="#!"><i class="material-icons">content_copy</i>Copy</a></li>
 <li class="ticket-menu-delete"><a href="#!" class="red-text"><i class="material-icons red-text">delete</i>Delete</a></li>

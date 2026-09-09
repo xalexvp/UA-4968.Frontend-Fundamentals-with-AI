@@ -1,8 +1,10 @@
 /**
  * kanban.js
- * Kanban board logic: in-memory ticket store, rendering, drag & drop
- * between the 3 panels, per-ticket 3-dot menu (move / copy / delete),
- * long-description collapse, add-ticket modal, and a simple search filter.
+ * Kanban board logic: localStorage-backed ticket store, rendering,
+ * drag & drop between the 3 panels, per-ticket 3-dot menu
+ * (edit title, edit description, move, copy-with-confirmation, delete),
+ * status icons & background colors, long-description collapse,
+ * add-ticket modal, and a simple search filter.
  */
 
 const STATUSES = ['todo', 'inProgress', 'done'];
@@ -11,8 +13,14 @@ const STATUS_LABELS = {
   inProgress: 'In Progress',
   done: 'Done'
 };
+const STATUS_ICONS = {
+  todo: 'assignment',
+  inProgress: 'autorenew',
+  done: 'check_circle'
+};
+const STORAGE_KEY = 'kanbanTickets';
 
-let tickets = [
+const seedTickets = [
   {
     id: 't1',
     title: 'Set up project repository',
@@ -45,12 +53,40 @@ let tickets = [
   }
 ];
 
+let tickets = [];
 let searchQuery = '';
-let idCounter = tickets.length + 1;
+
+/* Tracks what the "edit title" / "edit description" modals are currently acting on */
+let activeEditTicketId = null;
+
+/* ---------- Persistence ---------- */
+
+function loadTickets() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        tickets = parsed;
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('Could not read tickets from localStorage, using defaults.', e);
+  }
+  tickets = seedTickets.map(function (t) { return Object.assign({}, t); });
+}
+
+function saveTickets() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tickets));
+  } catch (e) {
+    console.warn('Could not save tickets to localStorage.', e);
+  }
+}
 
 function generateId() {
-  idCounter += 1;
-  return 't' + idCounter + '-' + Date.now();
+  return 't-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
 }
 
 function otherStatuses(currentStatus) {
@@ -100,7 +136,9 @@ function buildTicketCard(ticket) {
 
   const cardEl = node.querySelector('.ticket-card');
   cardEl.dataset.id = ticket.id;
+  cardEl.classList.add('status-' + ticket.status);
 
+  node.querySelector('.ticket-status-icon').textContent = STATUS_ICONS[ticket.status];
   node.querySelector('.ticket-title').textContent = ticket.title;
   node.querySelector('.ticket-description').textContent = ticket.description || '';
 
@@ -111,14 +149,28 @@ function buildTicketCard(ticket) {
   const dropdownEl = node.querySelector('.ticket-dropdown');
   dropdownEl.id = dropdownId;
 
+  node.querySelector('.ticket-menu-edit-title').addEventListener('click', function (e) {
+    e.preventDefault();
+    openEditTitleModal(ticket.id);
+  });
+
+  node.querySelector('.ticket-menu-edit-description').addEventListener('click', function (e) {
+    e.preventDefault();
+    openEditDescriptionModal(ticket.id);
+  });
+
   const others = otherStatuses(ticket.status);
   const move1 = node.querySelector('.ticket-menu-move-1');
   const move2 = node.querySelector('.ticket-menu-move-2');
+
+  move1.querySelector('i').textContent = STATUS_ICONS[others[0]];
   move1.querySelector('span').textContent = 'Move to ' + STATUS_LABELS[others[0]];
   move1.addEventListener('click', function (e) {
     e.preventDefault();
     moveTicket(ticket.id, others[0]);
   });
+
+  move2.querySelector('i').textContent = STATUS_ICONS[others[1]];
   move2.querySelector('span').textContent = 'Move to ' + STATUS_LABELS[others[1]];
   move2.addEventListener('click', function (e) {
     e.preventDefault();
@@ -127,7 +179,7 @@ function buildTicketCard(ticket) {
 
   node.querySelector('.ticket-menu-copy').addEventListener('click', function (e) {
     e.preventDefault();
-    copyTicket(ticket.id);
+    openCopyModal(ticket.id);
   });
 
   node.querySelector('.ticket-menu-delete').addEventListener('click', function (e) {
@@ -188,29 +240,36 @@ function moveTicket(id, newStatus) {
   const ticket = findTicket(id);
   if (!ticket) return;
   ticket.status = newStatus;
+  saveTickets();
   render();
   toast('Moved "' + ticket.title + '" to ' + STATUS_LABELS[newStatus]);
-}
-
-function copyTicket(id) {
-  const ticket = findTicket(id);
-  if (!ticket) return;
-  tickets.push({
-    id: generateId(),
-    title: ticket.title + ' (copy)',
-    description: ticket.description,
-    status: ticket.status
-  });
-  render();
-  toast('Copied "' + ticket.title + '"');
 }
 
 function deleteTicket(id) {
   const ticket = findTicket(id);
   if (!ticket) return;
   tickets = tickets.filter(function (t) { return t.id !== id; });
+  saveTickets();
   render();
   toast('Deleted "' + ticket.title + '"');
+}
+
+function updateTicketTitle(id, newTitle) {
+  const ticket = findTicket(id);
+  if (!ticket) return;
+  ticket.title = newTitle;
+  saveTickets();
+  render();
+  toast('Title updated');
+}
+
+function updateTicketDescription(id, newDescription) {
+  const ticket = findTicket(id);
+  if (!ticket) return;
+  ticket.description = newDescription;
+  saveTickets();
+  render();
+  toast('Description updated');
 }
 
 function addTicket(title, description, status) {
@@ -220,6 +279,7 @@ function addTicket(title, description, status) {
     description: description,
     status: status
   });
+  saveTickets();
   render();
   toast('Added "' + title + '"');
 }
@@ -249,26 +309,51 @@ function initDropzones() {
   });
 }
 
-/* ---------- Add ticket modal ---------- */
+/* ---------- Add / Copy ticket modal (shared) ---------- */
 
-function initAddModal() {
-  const modalEl = document.getElementById('ticketModal');
-  const modalInstance = M.Modal.init(modalEl, {});
+let ticketModalInstance = null;
+let ticketModalMode = 'add'; // 'add' | 'copy'
 
-  function openModal() {
+function initTicketModal() {
+  ticketModalInstance = M.Modal.init(document.getElementById('ticketModal'), {});
+
+  function openModal(mode, prefill) {
+    ticketModalMode = mode;
     document.getElementById('ticketForm').reset();
+
+    const titleInput = document.getElementById('ticketTitle');
+    const descriptionInput = document.getElementById('ticketDescription');
+    const statusSelect = document.getElementById('ticketStatus');
+    const heading = document.getElementById('ticketModalHeading');
+    const saveBtn = document.getElementById('saveTicketBtn');
+
+    if (mode === 'copy' && prefill) {
+      titleInput.value = prefill.title;
+      descriptionInput.value = prefill.description || '';
+      statusSelect.value = prefill.status;
+      heading.textContent = 'Copy Ticket';
+      saveBtn.textContent = 'Add Copy';
+    } else {
+      titleInput.value = '';
+      descriptionInput.value = '';
+      statusSelect.value = 'todo';
+      heading.textContent = 'New Ticket';
+      saveBtn.textContent = 'Add Ticket';
+    }
+
     M.updateTextFields();
-    M.FormSelect.init(document.getElementById('ticketStatus'));
-    modalInstance.open();
+    M.FormSelect.init(statusSelect);
+    titleInput.classList.remove('invalid');
+    ticketModalInstance.open();
   }
 
   document.getElementById('openAddModalBtn').addEventListener('click', function (e) {
     e.preventDefault();
-    openModal();
+    openModal('add', null);
   });
   document.getElementById('openAddModalBtnMobile').addEventListener('click', function (e) {
     e.preventDefault();
-    openModal();
+    openModal('add', null);
     const sidenavInstance = M.Sidenav.getInstance(document.getElementById('mobile-nav'));
     if (sidenavInstance) sidenavInstance.close();
   });
@@ -285,8 +370,66 @@ function initAddModal() {
     }
 
     addTicket(title, descriptionInput.value.trim(), statusSelect.value);
-    modalInstance.close();
+    ticketModalInstance.close();
   });
+
+  window.openAddTicketModal = function () { openModal('add', null); };
+  window.openCopyTicketModal = function (prefill) { openModal('copy', prefill); };
+}
+
+function openCopyModal(id) {
+  const ticket = findTicket(id);
+  if (!ticket) return;
+  window.openCopyTicketModal({
+    title: ticket.title + ' (copy)',
+    description: ticket.description,
+    status: ticket.status
+  });
+}
+
+/* ---------- Edit title / description modals ---------- */
+
+let editTitleModalInstance = null;
+let editDescriptionModalInstance = null;
+
+function initEditModals() {
+  editTitleModalInstance = M.Modal.init(document.getElementById('editTitleModal'), {});
+  editDescriptionModalInstance = M.Modal.init(document.getElementById('editDescriptionModal'), {});
+
+  document.getElementById('saveTitleBtn').addEventListener('click', function () {
+    const input = document.getElementById('editTitleInput');
+    const value = input.value.trim();
+    if (!value || !activeEditTicketId) return;
+    updateTicketTitle(activeEditTicketId, value);
+    editTitleModalInstance.close();
+  });
+
+  document.getElementById('saveDescriptionBtn').addEventListener('click', function () {
+    const textarea = document.getElementById('editDescriptionInput');
+    if (!activeEditTicketId) return;
+    updateTicketDescription(activeEditTicketId, textarea.value.trim());
+    editDescriptionModalInstance.close();
+  });
+}
+
+function openEditTitleModal(id) {
+  const ticket = findTicket(id);
+  if (!ticket) return;
+  activeEditTicketId = id;
+  const input = document.getElementById('editTitleInput');
+  input.value = ticket.title;
+  M.updateTextFields();
+  editTitleModalInstance.open();
+}
+
+function openEditDescriptionModal(id) {
+  const ticket = findTicket(id);
+  if (!ticket) return;
+  activeEditTicketId = id;
+  const textarea = document.getElementById('editDescriptionInput');
+  textarea.value = ticket.description || '';
+  M.updateTextFields();
+  editDescriptionModalInstance.open();
 }
 
 /* ---------- Search ---------- */
@@ -304,8 +447,10 @@ document.addEventListener('DOMContentLoaded', function () {
   M.Sidenav.init(document.querySelectorAll('.sidenav-trigger'), {});
   M.FormSelect.init(document.querySelectorAll('select'));
 
+  loadTickets();
   initDropzones();
-  initAddModal();
+  initTicketModal();
+  initEditModals();
   initSearch();
   render();
 });

@@ -65,10 +65,44 @@ main.board-main {
   cursor: grab;
   margin: 0 0 12px 0;
   box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  border-left: 4px solid transparent;
 }
 
 .ticket-card.dragging {
   opacity: 0.4;
+}
+
+.ticket-card.status-todo {
+  background-color: #e3f2fd;
+  border-left-color: #1565c0;
+}
+
+.ticket-card.status-inProgress {
+  background-color: #fff8e1;
+  border-left-color: #ff8f00;
+}
+
+.ticket-card.status-done {
+  background-color: #e0f2f1;
+  border-left-color: #00695c;
+}
+
+.ticket-status-icon {
+  font-size: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.status-todo .ticket-status-icon {
+  color: #1565c0;
+}
+
+.status-inProgress .ticket-status-icon {
+  color: #ff8f00;
+}
+
+.status-done .ticket-status-icon {
+  color: #00695c;
 }
 
 .ticket-card .card-content {
@@ -87,6 +121,7 @@ main.board-main {
   font-weight: 600;
   line-height: 1.3;
   word-break: break-word;
+  flex: 1;
 }
 
 .ticket-menu-trigger {
